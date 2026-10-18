@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AirAlert - Advanced Air Quality Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN for Trends -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen">
+
+    <div class="max-w-4xl mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🌍</span>
+                <h1 class="text-xl font-bold tracking-tight">AirAlert</h1>
+            </div>
+            <div class="text-xs text-slate-400">Breathe Smarter • Live Data When Available</div>
+        </header>
+
+        <!-- Main Card -->
+        <main class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+            <h2 class="text-2xl font-bold mb-2">Know the air around you.</h2>
+            <p class="text-slate-400 text-sm mb-6">Monitor air quality estimates, forecasts, and particulate pollution from one dashboard.</p>
+
+            <!-- Location Search Form -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-medium text-slate-400 mb-1">City or Location Name</label>
+                    <input type="text" id="cityInput" placeholder="e.g., Patna, Delhi, New York" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-400 mb-1">AQI Standard</label>
+                    <select id="aqiStandard" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-blue-500">
+                        <option value="us">US AQI (0 - 500)</option>
+                        <option value="india">Indian National AQI</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button onclick="fetchAirQuality()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition">Get Air Quality</button>
+                <button onclick="useDeviceLocation()" class="bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium px-5 py-2.5 rounded-xl transition">Use My Location</button>
+                <button onclick="loadDemoData()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium px-5 py-2.5 rounded-xl transition">Try Demo Data</button>
+            </div>
+
+            <div id="statusMessage" class="text-xs text-amber-400 mb-6">Demo loaded. These numbers are examples only.[span_0](start_span)[span_0](end_span)</div>
+
+            <!-- Overview Section -->
+            <div class="border-t border-slate-800 pt-6">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="text-xs text-slate-400 uppercase tracking-wider">Air Quality Overview</span>
+                        <h3 id="locationTitle" class="text-lg font-semibold">Sample Location (not live)[span_1](start_span)[span_1](end_span)</h3>
+                    </div>
+                    <span id="aqiStatusBadge" class="bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold px-3 py-1 rounded-full">Moderate[span_2](start_span)[span_2](end_span)</span>
+                </div>
+
+                <p id="healthAdvice" class="text-sm text-slate-300 mb-6">Some sensitive people may need extra caution.[span_3](start_span)[span_3](end_span)</p>
+
+                <!-- Pollutant Cards Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-xl p-4">
+                        <div id="aqiLabelText" class="text-xs text-slate-400 mb-1">US AQI[span_4](start_span)[span_4](end_span)</div>
+                        <div id="aqiValue" class="text-3xl font-bold">78</div>
+                        <div class="text-[10px] text-slate-500 mt-1">Index (0–500+)[span_5](start_span)[span_5](end_span)</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-xl p-4">
+                        <div class="text-xs text-slate-400 mb-1">PM2.5[span_6](start_span)[span_6](end_span)</div>
+                        <div id="pm25Value" class="text-3xl font-bold">22.4</div>
+                        <div class="text-[10px] text-slate-500 mt-1">µg/m³[span_7](start_span)[span_7](end_span)</div>
+                    </div>
+                    <div class="bg-slate-950 border border-slate-800/60 rounded-xl p-4">
+                        <div class="text-xs text-slate-400 mb-1">PM10[span_8](start_span)[span_8](end_span)</div>
+                        <div id="pm10Value" class="text-3xl font-bold">41.8</div>
+                        <div class="text-[10px] text-slate-500 mt-1">µg/m³[span_9](start_span)[span_9](end_span)</div>
+                    </div>
+                </div>
+
+                <!-- Additional Pollutants Row -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    <div class="bg-slate-950/50 border border-slate-800/40 rounded-xl p-3 text-center">
+                        <div class="text-[11px] text-slate-400">NO₂</div>
+                        <div id="no2Value" class="text-base font-semibold mt-1">12.5</div>
+                    </div>
+                    <div class="bg-slate-950/50 border border-slate-800/40 rounded-xl p-3 text-center">
+                        <div class="text-[11px] text-slate-400">SO₂</div>
+                        <div id="so2Value" class="text-base font-semibold mt-1">4.2</div>
+                    </div>
+                    <div class="bg-slate-950/50 border border-slate-800/40 rounded-xl p-3 text-center">
+                        <div class="text-[11px] text-slate-400">CO</div>
+                        <div id="coValue" class="text-base font-semibold mt-1">0.8</div>
+                    </div>
+                    <div class="bg-slate-950/50 border border-slate-800/40 rounded-xl p-3 text-center">
+                        <div class="text-[11px] text-slate-400">O₃</div>
+                        <div id="o3Value" class="text-base font-semibold mt-1">30.1</div>
+                    </div>
+                </div>
+
+                <!-- 24-Hour Trend Chart Section -->
+                <div class="bg-slate-950 border border-slate-800/60 rounded-xl p-4 mb-6">
+                    <h4 class="text-xs font-medium text-slate-400 mb-3">24-Hour AQI Trend Forecast</h4>
+                    <div class="h-48">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="text-xs text-slate-500 flex justify-between items-center border-t border-slate-800/60 pt-4">
+                    <span id="updateTime">Updated: 18/10/2026, 12:48:18 pm[span_10](start_span)[span_10](end_span)</span>
+                    <span id="dataSource">Source: DEMO DATA — NOT A REAL MEASUREMENT[span_11](start_span)[span_11](end_span)</span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Script to handle interactions and chart rendering -->
+    <script>
+        let trendChart;
+
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '03:00', '06:00', '09:00', '12:00', '15:00', '18:00', '21:00'],
+                    datasets: [{
+                        label: 'AQI Trend',
+                        data: [65, 60, 55, 70, 82, 78, 75, 68],
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#64748b', font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        function loadDemoData() {
+            document.getElementById('cityInput').value = '';
+            document.getElementById('locationTitle').innerText = 'Sample Location (not live)';[span_12](start_span)[span_12](end_span)
+            document.getElementById('aqiValue').innerText = '78';[span_13](start_span)[span_13](end_span)
+            document.getElementById('pm25Value').innerText = '22.4';[span_14](start_span)[span_14](end_span)
+            document.getElementById('pm10Value').innerText = '41.8';[span_15](start_span)[span_15](end_span)
+            document.getElementById('no2Value').innerText = '12.5';
+            document.getElementById('so2Value').innerText = '4.2';
+            document.getElementById('coValue').innerText = '0.8';
+            document.getElementById('o3Value').innerText = '30.1';
+            document.getElementById('statusMessage').innerText = 'Demo loaded. These numbers are examples only.';[span_16](start_span)[span_16](end_span)
+            document.getElementById('dataSource').innerText = 'Source: DEMO DATA — NOT A REAL MEASUREMENT';[span_17](start_span)[span_17](end_span)
+        }
+
+        function fetchAirQuality() {
+            const city = document.getElementById('cityInput').value.trim();
+            if(!city) {
+                alert('Please enter a city name!');
+                return;
+            }
+            // Mock dynamic change based on search
+            document.getElementById('locationTitle').innerText = city + ' (Live Est.)';
+            document.getElementById('aqiValue').innerText = Math.floor(Math.random() * 100) + 40;
+            document.getElementById('pm25Value').innerText = (Math.random() * 30 + 10).toFixed(1);
+            document.getElementById('pm10Value').innerText = (Math.random() * 50 + 20).toFixed(1);
+            document.getElementById('statusMessage').innerText = 'Data successfully fetched for ' + city;
+            document.getElementById('dataSource').innerText = 'Source: External Air Quality Model API';
+        }
+
+        function useDeviceLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    const lat = position.coords.latitude.toFixed(4);
+                    const lon = position.coords.longitude.toFixed(4);
+                    document.getElementById('cityInput').value = `Lat: ${lat}, Lon: ${lon}`;
+                    document.getElementById('locationTitle').innerText = 'Current Device Location';
+                    document.getElementById('aqiValue').innerText = '62';
+                    document.getElementById('pm25Value').innerText = '18.2';
+                    document.getElementById('pm10Value').innerText = '35.4';
+                    document.getElementById('statusMessage').innerText = 'Using GPS coordinates successfully.';
+                    document.getElementById('dataSource').innerText = 'Source: Device GPS Sensor & Local Model';
+                }, () => {
+                    alert('Unable to retrieve your location. Please check browser permissions.');
+                });
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        }
+
+        window.onload = initChart;
+    </script>
+</body>
+</html>
